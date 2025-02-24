@@ -4,41 +4,157 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Police Database</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c3e50;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+        .container {
+            background: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 900px;
+            color: white;
+        }
+        h2 {
+            text-align: center;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: none;
+        }
+        input {
+            background: #ecf0f1;
+        }
+        button {
+            background-color: #2980b9;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #1f6690;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            color: black;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #2980b9;
+            color: white;
+        }
+    </style>
 </head>
 <body>
-    <h1>Police Cases</h1>
-    <table border="1" id="casesTable">
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Case Number</th>
-            <th>Status</th>
-            <th>Charges</th>
-            <th>Citation</th>
-            <th>Actions</th>
-        </tr>
-    </table>
+    <div class="container">
+        <h2>Police Database</h2>
+        <input type="text" placeholder="Search by name, ID, or case number">
+        <button>Search</button>
+        <h3>Add Case</h3>
+        <input type="text" id="name" placeholder="Name">
+        <input type="text" id="caseNumber" placeholder="Case Number">
+        <input type="text" id="status" placeholder="Status">
+        <input type="text" id="charges" placeholder="Charges">
+        <input type="text" id="citation" placeholder="Citations">
+        <input type="file" id="mugshot">
+        <button onclick="addCase()">Add Case</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Case Number</th>
+                    <th>Status</th>
+                    <th>Charges</th>
+                    <th>Citations</th>
+                    <th>Mug Shot</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCwJ-vB6r2Ofc4c8sBt8loyXMC-LzQBvPc",
+            authDomain: "policedatabase-ab642.firebaseapp.com",
+            projectId: "policedatabase-ab642",
+            storageBucket: "policedatabase-ab642.firebasestorage.app",
+            messagingSenderId: "809510064470",
+            appId: "1:809510064470:web:4cbe3652e8566b033806f7",
+            measurementId: "G-7J048PDD4Y"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+        const casesCollection = collection(db, "cases");
+
         async function loadCases() {
-            const response = await fetch('cases.json');
-            const cases = await response.json();
-            const table = document.getElementById('casesTable');
-            
-            cases.forEach((caseData, index) => {
-                let newRow = table.insertRow();
-                newRow.insertCell(0).innerText = index + 1;
-                newRow.insertCell(1).innerText = caseData.name;
-                newRow.insertCell(2).innerText = caseData.caseNumber;
-                newRow.insertCell(3).innerText = caseData.status;
-                newRow.insertCell(4).innerText = caseData.charges;
-                newRow.insertCell(5).innerText = caseData.citation;
-                newRow.insertCell(6).innerHTML = '<button onclick="removeCase(' + index + ')">Remove</button>';
+            const querySnapshot = await getDocs(casesCollection);
+            const tableBody = document.querySelector("table tbody");
+            tableBody.innerHTML = "";
+            querySnapshot.forEach((doc) => {
+                addCaseToTable(doc.data(), doc.id);
             });
         }
 
-        function removeCase(index) {
-            alert('Case ' + (index + 1) + ' removed (simulated).');
+        function addCaseToTable(caseData, docId) {
+            const table = document.querySelector("table tbody");
+            const newRow = table.insertRow();
+            newRow.insertCell(0).innerText = caseData.id;
+            newRow.insertCell(1).innerText = caseData.name;
+            newRow.insertCell(2).innerText = caseData.caseNumber;
+            newRow.insertCell(3).innerText = caseData.status;
+            newRow.insertCell(4).innerText = caseData.charges;
+            newRow.insertCell(5).innerText = caseData.citation;
+            newRow.insertCell(6).innerHTML = "<img src='' alt='Mugshot' width='50'>";
+            newRow.insertCell(7).innerHTML = `<button onclick="removeCase('${docId}')">Remove</button>`;
+        }
+
+        async function addCase() {
+            const caseData = {
+                id: Date.now().toString(),
+                name: document.getElementById("name").value,
+                caseNumber: document.getElementById("caseNumber").value,
+                status: document.getElementById("status").value,
+                charges: document.getElementById("charges").value,
+                citation: document.getElementById("citation").value
+            };
+            if (caseData.name && caseData.caseNumber) {
+                await addDoc(casesCollection, caseData);
+                loadCases();
+            }
+        }
+
+        async function removeCase(docId) {
+            await deleteDoc(doc(casesCollection, docId));
+            loadCases();
         }
 
         window.onload = loadCases;
