@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Police Database</title>
+</head>
+<body>
+    <h1>Police Cases</h1>
+    <table border="1" id="casesTable">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Case Number</th>
+            <th>Status</th>
+            <th>Charges</th>
+            <th>Citation</th>
+            <th>Actions</th>
+        </tr>
+    </table>
+
+    <script>
+        async function loadCases() {
+            const response = await fetch('cases.json');
+            const cases = await response.json();
+            const table = document.getElementById('casesTable');
+            
+            cases.forEach((caseData, index) => {
+                let newRow = table.insertRow();
+                newRow.insertCell(0).innerText = index + 1;
+                newRow.insertCell(1).innerText = caseData.name;
+                newRow.insertCell(2).innerText = caseData.caseNumber;
+                newRow.insertCell(3).innerText = caseData.status;
+                newRow.insertCell(4).innerText = caseData.charges;
+                newRow.insertCell(5).innerText = caseData.citation;
+                newRow.insertCell(6).innerHTML = '<button onclick="removeCase(' + index + ')">Remove</button>';
+            });
+        }
+
+        function removeCase(index) {
+            alert('Case ' + (index + 1) + ' removed (simulated).');
+        }
+
+        window.onload = loadCases;
+    </script>
+</body>
+</html>
